@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抢15点课堂游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 1000px;
+            width: 100%;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            margin-top: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.2rem;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+        
+        .game-description {
+            background-color: #e8f4fc;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #3498db;
+        }
+        
+        .game-description h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .game-description p {
+            font-size: 0.95rem;
+        }
+        
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        @media (min-width: 992px) {
+            .game-area {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+            
+            .game-board {
+                flex: 1;
+                min-width: 0; /* 防止flex item溢出 */
+            }
+            
+            .game-info {
+                flex: 1;
+                min-width: 0; /* 防止flex item溢出 */
+            }
+        }
+        
+        @media (max-width: 991px) {
+            .game-board {
+                width: 100%;
+            }
+            
+            .game-info {
+                width: 100%;
+            }
+        }
+        
+        .game-board {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .current-player {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            text-align: center;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            width: 100%;
+            max-width: 350px;
+        }
+        
+        .player-turn {
+            background-color: #e8f6f3;
+            color: #27ae60;
+            border: 2px solid #27ae60;
+        }
+        
+        .ai-turn {
+            background-color: #fdedec;
+            color: #e74c3c;
+            border: 2px solid #e74c3c;
+        }
+        
+        .waiting {
+            background-color: #fef9e7;
+            color: #f39c12;
+            border: 2px solid #f39c12;
+        }
+        
+        .number-grid-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+        
+        .number-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .number-btn {
+            aspect-ratio: 1;
+            border: none;
+            border-radius: 10px;
+            font-size: 2.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 70px;
+        }
+        
+        @media (max-width: 768px) {
+            .number-btn {
+                font-size: 1.8rem;
+                min-height: 60px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .number-btn {
+                font-size: 1.5rem;
+                min-height: 50px;
+            }
+        }
+        
+        .available {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .available:hover {
+            background-color: #2980b9;
+        }
+        
+        .selected-by-player {
+            background-color: #27ae60;
+            color: white;
+            cursor: default;
+        }
+        
+        .selected-by-ai {
+            background-color: #e74c3c;
+            color: white;
+            cursor: default;
+        }
+        
+        .winning-number {
+            border: 3px solid #f1c40f;
+        }
+        
+        .game-info {
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .selected-numbers {
+            margin-bottom: 20px;
+            flex-grow: 1;
+        }
+        
+        .selected-numbers h3 {
+            margin-bottom: 12px;
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 8px;
+            font-size: 1.2rem;
+        }
+        
+        .player-numbers, .ai-numbers {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+            min-height: 50px;
+            align-items: center;
+        }
+        
+        .number-chip {
+            background-color: #3498db;
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .player-chip {
+            background-color: #27ae60;
+        }
+        
+        .ai-chip {
+            background-color: #e74c3c;
+        }
+        
+        .empty-selection {
+            color: #95a5a6;
+            font-style: italic;
+            font-size: 0.95rem;
+        }
+        
+        .game-result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            display: none;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .win-message {
+            background-color: #d5f4e6;
+            color: #27ae60;
+            border: 2px solid #27ae60;
+        }
+        
+        .lose-message {
+            background-color: #fadbd8;
+            color: #e74c3c;
+            border: 2px solid #e74c3c;
+        }
+        
+        .draw-message {
+            background-color: #fef9e7;
+            color: #f39c12;
+            border: 2px solid #f39c12;
+        }
+        
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+        
+        .control-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            min-width: 130px;
+        }
+        
+        .start-btn {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .start-btn:hover {
+            background-color: #27ae60;
+        }
+        
+        .reset-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .reset-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        .rules {
+            margin-top: 25px;
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 5px solid #9b59b6;
+        }
+        
+        .rules h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        
+        .rules ul {
+            padding-left: 20px;
+        }
+        
+        .rules li {
+            margin-bottom: 8px;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+        
+        .winning-combination {
+            color: #e74c3c;
+            font-weight: bold;
+            background-color: #fdedec;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f0f7ff;
+            border-radius: 10px;
+            border: 2px solid #3498db;
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            text-align: center;
+            margin: 5px 10px;
+            min-width: 80px;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .stat-label {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        footer {
+            margin-top: 25px;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.85rem;
+        }
+        
+        /* 确保在小屏幕上也能正常显示 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .game-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .control-btn {
+                width: 100%;
+                max-width: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>抢15点课堂游戏</h1>
+        <p class="subtitle">学生与AI轮流选择数字，谁先有3个数字之和为15谁就获胜</p>
+    </header>
+    
+    <div class="container">
+        <div class="game-description">
+            <h3>游戏说明</h3>
+            <p>游戏规则：学生和AI轮流从1-9中选择一个数字，每个数字只能被选择一次。谁先拥有3个数字之和为15谁就获胜。如果所有数字都被选完还没有人获胜，则为平局。</p>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="player-wins">0</div>
+                <div class="stat-label">学生获胜</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="ai-wins">0</div>
+                <div class="stat-label">AI获胜</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="draws">0</div>
+                <div class="stat-label">平局</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="total-games">0</div>
+                <div class="stat-label">总游戏数</div>
+            </div>
+        </div>
+        
+        <div class="game-area">
+            <div class="game-board">
+                <div class="current-player waiting" id="current-player">
+                    点击"开始游戏"按钮
+                </div>
+                
+                <div class="number-grid-container">
+                    <div class="number-grid">
+                        <!-- 数字按钮将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="game-info">
+                <div class="selected-numbers">
+                    <h3>学生选择的数字</h3>
+                    <div class="player-numbers" id="player-numbers">
+                        <div class="empty-selection">尚未选择数字</div>
+                    </div>
+                    
+                    <h3>AI选择的数字</h3>
+                    <div class="ai-numbers" id="ai-numbers">
+                        <div class="empty-selection">尚未选择数字</div>
+                    </div>
+                </div>
+                
+                <div class="game-result" id="game-result"></div>
+                
+                <div class="game-controls">
+                    <button class="control-btn start-btn" id="start-btn">
+                        开始游戏
+                    </button>
+                    <button class="control-btn reset-btn" id="reset-btn">
+                        重新开始
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="rules">
+            <h3>游戏策略与提示</h3>
+            <ul>
+                <li>游戏目标：收集三个数字，使其总和为15</li>
+                <li>学生和AI轮流从1-9中选择数字，每个数字只能被选择一次</li>
+                <li>谁先拥有3个数字之和为15谁就获胜</li>
+                <li>可能的获胜组合示例：<span class="winning-combination">(1,5,9)</span>, <span class="winning-combination">(2,7,6)</span>, <span class="winning-combination">(8,3,4)</span>等</li>
+                <li><strong>策略提示</strong>：优先选择数字5（中心位置），它出现在4个获胜组合中</li>
+                <li><strong>有趣的事实</strong>：这个游戏在数学上等价于井字棋（Tic-Tac-Toe）！</li>
+            </ul>
+        </div>
+    </div>
+    
+    <footer>
+        <p>设计用于课堂教学 | 抢15点游戏</p>
+    </footer>
+
+    <script>
+        // 游戏状态变量
+        let gameActive = false;
+        let currentPlayer = 'player'; // 'player' 或 'ai'
+        let playerNumbers = [];
+        let aiNumbers = [];
+        let availableNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        let winningCombinations = [
+            [1, 5, 9], [1, 6, 8], [2, 4, 9], [2, 5, 8],
+            [2, 6, 7], [3, 4, 8], [3, 5, 7], [4, 5, 6]
+        ];
+        
+        // 统计数据
+        let playerWins = 0;
+        let aiWins = 0;
+        let draws = 0;
+        let totalGames = 0;
+        
+        // DOM元素
+        const numberGrid = document.querySelector('.number-grid');
+        const currentPlayerDisplay = document.getElementById('current-player');
+        const playerNumbersDisplay = document.getElementById('player-numbers');
+        const aiNumbersDisplay = document.getElementById('ai-numbers');
+        const gameResultDisplay = document.getElementById('game-result');
+        const startBtn = document.getElementById('start-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        
+        // 统计显示元素
+        const playerWinsDisplay = document.getElementById('player-wins');
+        const aiWinsDisplay = document.getElementById('ai-wins');
+        const drawsDisplay = document.getElementById('draws');
+        const totalGamesDisplay = document.getElementById('total-games');
+        
+        // 初始化数字按钮
+        function initNumberButtons() {
+            numberGrid.innerHTML = '';
+            
+            for (let i = 1; i <= 9; i++) {
+                const button = document.createElement('button');
+                button.classList.add('number-btn', 'available');
+                button.textContent = i;
+                button.dataset.number = i;
+                
+                button.addEventListener('click', () => {
+                    if (gameActive && currentPlayer === 'player' && availableNumbers.includes(i)) {
+                        selectNumber(i, 'player');
+                        
+                        // 检查玩家是否获胜
+                        if (checkWin(playerNumbers)) {
+                            endGame('player');
+                            return;
+                        }
+                        
+                        // 检查是否平局
+                        if (availableNumbers.length === 0) {
+                            endGame('draw');
+                            return;
+                        }
+                        
+                        // 切换到AI回合
+                        switchToAi();
+                        setTimeout(aiTurn, 800);
+                    }
+                });
+                
+                numberGrid.appendChild(button);
+            }
+        }
+        
+        // 选择数字
+        function selectNumber(number, player) {
+            // 从可用数字中移除
+            const index = availableNumbers.indexOf(number);
+            if (index !== -1) {
+                availableNumbers.splice(index, 1);
+            }
+            
+            // 添加到相应玩家的数字列表
+            if (player === 'player') {
+                playerNumbers.push(number);
+                playerNumbers.sort((a, b) => a - b);
+                updatePlayerNumbersDisplay();
+            } else {
+                aiNumbers.push(number);
+                aiNumbers.sort((a, b) => a - b);
+                updateAiNumbersDisplay();
+            }
+            
+            // 更新按钮状态
+            updateNumberButton(number, player);
+        }
+        
+        // 更新数字按钮显示状态
+        function updateNumberButton(number, player) {
+            const button = document.querySelector(`.number-btn[data-number="${number}"]`);
+            button.classList.remove('available');
+            
+            if (player === 'player') {
+                button.classList.add('selected-by-player');
+            } else {
+                button.classList.add('selected-by-ai');
+            }
+        }
+        
+        // 更新玩家数字显示
+        function updatePlayerNumbersDisplay() {
+            playerNumbersDisplay.innerHTML = '';
+            
+            if (playerNumbers.length === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.classList.add('empty-selection');
+                emptyMsg.textContent = '尚未选择数字';
+                playerNumbersDisplay.appendChild(emptyMsg);
+                return;
+            }
+            
+            playerNumbers.forEach(number => {
+                const chip = document.createElement('div');
+                chip.classList.add('number-chip', 'player-chip');
+                chip.textContent = number;
+                playerNumbersDisplay.appendChild(chip);
+            });
+        }
+        
+        // 更新AI数字显示
+        function updateAiNumbersDisplay() {
+            aiNumbersDisplay.innerHTML = '';
+            
+            if (aiNumbers.length === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.classList.add('empty-selection');
+                emptyMsg.textContent = '尚未选择数字';
+                aiNumbersDisplay.appendChild(emptyMsg);
+                return;
+            }
+            
+            aiNumbers.forEach(number => {
+                const chip = document.createElement('div');
+                chip.classList.add('number-chip', 'ai-chip');
+                chip.textContent = number;
+                aiNumbersDisplay.appendChild(chip);
+            });
+        }
+        
+        // 切换到AI回合
+        function switchToAi() {
+            currentPlayer = 'ai';
+            currentPlayerDisplay.textContent = 'AI思考中...';
+            currentPlayerDisplay.classList.remove('player-turn', 'waiting');
+            currentPlayerDisplay.classList.add('ai-turn');
+        }
+        
+        // 切换到玩家回合
+        function switchToPlayer() {
+            currentPlayer = 'player';
+            currentPlayerDisplay.textContent = '轮到：学生选择';
+            currentPlayerDisplay.classList.remove('ai-turn', 'waiting');
+            currentPlayerDisplay.classList.add('player-turn');
+        }
+        
+        // AI回合逻辑
+        function aiTurn() {
+            if (!gameActive || currentPlayer !== 'ai') return;
+            
+            let selectedNumber;
+            
+            // 策略1: 检查AI是否能直接获胜
+            selectedNumber = findWinningMove(aiNumbers, playerNumbers);
+            
+            // 策略2: 如果没有获胜机会，阻止玩家获胜
+            if (!selectedNumber) {
+                selectedNumber = findWinningMove(playerNumbers, aiNumbers);
+            }
+            
+            // 策略3: 选择中心数字(5)如果可用
+            if (!selectedNumber && availableNumbers.includes(5)) {
+                selectedNumber = 5;
+            }
+            
+            // 策略4: 随机选择一个数字
+            if (!selectedNumber) {
+                const randomIndex = Math.floor(Math.random() * availableNumbers.length);
+                selectedNumber = availableNumbers[randomIndex];
+            }
+            
+            // AI选择数字
+            selectNumber(selectedNumber, 'ai');
+            
+            // 检查AI是否获胜
+            if (checkWin(aiNumbers)) {
+                endGame('ai');
+                return;
+            }
+            
+            // 检查是否平局
+            if (availableNumbers.length === 0) {
+                endGame('draw');
+                return;
+            }
+            
+            // 切换到玩家回合
+            switchToPlayer();
+        }
+        
+        // 寻找获胜机会或阻止对手获胜
+        function findWinningMove(myNumbers, opponentNumbers) {
+            // 检查是否有两个数字已经选中，且第三个数字可用
+            for (let i = 0; i < winningCombinations.length; i++) {
+                const combination = winningCombinations[i];
+                const myNumbersInCombination = combination.filter(num => myNumbers.includes(num));
+                
+                if (myNumbersInCombination.length === 2) {
+                    // 找到第三个数字
+                    const missingNumber = combination.find(num => !myNumbers.includes(num));
+                    
+                    // 如果这个数字可用，选择它
+                    if (availableNumbers.includes(missingNumber)) {
+                        return missingNumber;
+                    }
+                }
+            }
+            
+            // 检查是否需要阻止对手
+            for (let i = 0; i < winningCombinations.length; i++) {
+                const combination = winningCombinations[i];
+                const opponentNumbersInCombination = combination.filter(num => opponentNumbers.includes(num));
+                
+                if (opponentNumbersInCombination.length === 2) {
+                    // 找到对手可能获胜的第三个数字
+                    const missingNumber = combination.find(num => !opponentNumbers.includes(num));
+                    
+                    // 如果这个数字可用，选择它来阻止对手
+                    if (availableNumbers.includes(missingNumber)) {
+                        return missingNumber;
+                    }
+                }
+            }
+            
+            return null;
+        }
+        
+        // 检查是否获胜
+        function checkWin(playerNumbersArray) {
+            if (playerNumbersArray.length < 3) return false;
+            
+            // 检查所有可能的获胜组合
+            for (let i = 0; i < winningCombinations.length; i++) {
+                const combination = winningCombinations[i];
+                
+                // 检查玩家是否拥有这个组合中的所有数字
+                if (combination.every(num => playerNumbersArray.includes(num))) {
+                    // 高亮显示获胜组合
+                    highlightWinningCombination(combination);
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        // 高亮显示获胜组合
+        function highlightWinningCombination(combination) {
+            combination.forEach(number => {
+                const button = document.querySelector(`.number-btn[data-number="${number}"]`);
+                button.classList.add('winning-number');
+            });
+        }
+        
+        // 更新统计显示
+        function updateStatsDisplay() {
+            playerWinsDisplay.textContent = playerWins;
+            aiWinsDisplay.textContent = aiWins;
+            drawsDisplay.textContent = draws;
+            totalGamesDisplay.textContent = totalGames;
+        }
+        
+        // 结束游戏
+        function endGame(winner) {
+            gameActive = false;
+            
+            // 更新统计数据
+            totalGames++;
+            if (winner === 'player') {
+                playerWins++;
+            } else if (winner === 'ai') {
+                aiWins++;
+            } else {
+                draws++;
+            }
+            updateStatsDisplay();
+            
+            // 显示游戏结果
+            gameResultDisplay.style.display = 'flex';
+            gameResultDisplay.classList.remove('win-message', 'lose-message', 'draw-message');
+            
+            if (winner === 'player') {
+                gameResultDisplay.textContent = '恭喜！你赢了！你找到了和为15的三个数字！';
+                gameResultDisplay.classList.add('win-message');
+            } else if (winner === 'ai') {
+                gameResultDisplay.textContent = 'AI获胜！再试一次，下次你可能会赢！';
+                gameResultDisplay.classList.add('lose-message');
+            } else {
+                gameResultDisplay.textContent = '平局！所有数字都被选完了，没有人找到和为15的三个数字。';
+                gameResultDisplay.classList.add('draw-message');
+            }
+            
+            currentPlayerDisplay.textContent = '游戏结束';
+            currentPlayerDisplay.classList.remove('player-turn', 'ai-turn');
+            currentPlayerDisplay.classList.add('waiting');
+            
+            // 更改按钮文本
+            startBtn.textContent = '再来一局';
+        }
+        
+        // 开始新游戏
+        function startNewGame() {
+            resetGame();
+            gameActive = true;
+            currentPlayer = 'player';
+            currentPlayerDisplay.textContent = '轮到：学生选择';
+            currentPlayerDisplay.classList.remove('waiting');
+            currentPlayerDisplay.classList.add('player-turn');
+            
+            // 隐藏游戏结果
+            gameResultDisplay.style.display = 'none';
+            
+            // 更改按钮文本
+            startBtn.textContent = '重新开始';
+        }
+        
+        // 重置游戏状态
+        function resetGame() {
+            gameActive = false;
+            currentPlayer = 'player';
+            playerNumbers = [];
+            aiNumbers = [];
+            availableNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+            
+            // 重置显示
+            initNumberButtons();
+            updatePlayerNumbersDisplay();
+            updateAiNumbersDisplay();
+            
+            gameResultDisplay.style.display = 'none';
+            currentPlayerDisplay.textContent = '点击"开始游戏"按钮';
+            currentPlayerDisplay.classList.remove('player-turn', 'ai-turn');
+            currentPlayerDisplay.classList.add('waiting');
+            
+            // 重置按钮文本
+            startBtn.textContent = '开始游戏';
+        }
+        
+        // 初始化
+        function init() {
+            initNumberButtons();
+            updateStatsDisplay();
+            
+            // 按钮事件监听
+            startBtn.addEventListener('click', startNewGame);
+            resetBtn.addEventListener('click', resetGame);
+            
+            // 初始显示
+            currentPlayerDisplay.textContent = '点击"开始游戏"按钮';
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
